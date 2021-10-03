@@ -1,0 +1,58 @@
+version: '3.4'
+services:
+  tailscale:
+    environment:
+      FOO: ${BAR}
+    image: TODO-tailscale-image
+    restart: unless-stopped
+    networks:
+      - internet
+      - proxy
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+  firefox:
+    image: ubuntulocal:20.04
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: /usr/bin/firefox --private-window
+    volumes:
+      - $XSOCKET:$XSOCKET
+      - $XAUTHORITY:$XAUTHORITY
+      - "./user1home:/home/user1"
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/vga_arbiter
+    environment:
+      - DISPLAY=$DISPLAY
+      - XAUTHORITY=$XAUTHORITY
+    network_mode: service:tailscale
+    depends_on:
+      - tailscale
+  terminal:
+    image: ubuntulocal:20.04
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: /usr/bin/terminator
+    volumes:
+      - $XSOCKET:$XSOCKET
+      - $XAUTHORITY:$XAUTHORITY
+      - "./user1home:/home/user1"
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/vga_arbiter
+    environment:
+      - DISPLAY=$DISPLAY
+      - XAUTHORITY=$XAUTHORITY
+    network_mode: service:tailscale
+    depends_on:
+      - tailscale
+volumes:
+  config:
+networks:
+  internet:
+  proxy:
+    internal: true
